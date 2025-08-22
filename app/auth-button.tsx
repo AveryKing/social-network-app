@@ -1,7 +1,11 @@
 "use client";
+
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
 export default function AuthButton() {
+  const supabase = createClientComponentClient();
   const handleLogin = async () => {
-    console.log("Login button clicked");
+    await supabase.auth.signInWithOAuth({ provider: "github" });
   };
   return <button onClick={handleLogin}>Login</button>;
 }
