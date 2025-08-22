@@ -2,6 +2,7 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AuthButton() {
   const supabase = createClientComponentClient();
@@ -15,14 +16,25 @@ export default function AuthButton() {
       },
     });
   };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.refresh();
   };
-  return (
-    <>
-      <button onClick={handleLogin}>Login</button>
-      <button onClick={handleLogout}>Logout</button>
-    </>
+
+  const [session, setSession] = useState<any>();
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+    };
+    getSession();
+  });
+
+  return !session ? (
+    <button onClick={handleLogin}>Login</button>
+  ) : (
+    <button onClick={handleLogout}>Logout</button>
   );
 }
