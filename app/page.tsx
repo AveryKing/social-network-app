@@ -1,16 +1,18 @@
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import Image from "next/image";
-import AuthButtonClient from "./auth-button-client";
 import AuthButtonServer from "./auth-button-server";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const supabase = createServerComponentClient({ cookies });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   const { data: posts } = await supabase.from("posts").select();
 
-  const handleLogin = async () => {
-    console.log("Login button clicked");
-  };
+  if (!session) {
+    redirect("/login");
+  }
   return (
     <>
       <AuthButtonServer />
