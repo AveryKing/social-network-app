@@ -12,5 +12,13 @@ export default function AuthButton() {
       },
     });
   };
-  return <button onClick={handleLogin}>Login</button>;
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+  return (
+    <>
+      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleLogout}>Logout</button>
+    </>
+  );
 }
