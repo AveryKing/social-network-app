@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 import AuthButtonServer from "./auth-button-server";
 import { redirect } from "next/navigation";
 import NewPost from "./new-post";
+import Likes from "./likes";
 
 export default async function Home() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient<any>({ cookies });
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -18,7 +19,15 @@ export default async function Home() {
     <>
       <AuthButtonServer />
       <NewPost />
-      <pre>{JSON.stringify(posts, null, 2)}</pre>
+      {posts?.map((post) => (
+        <div key={post.id}>
+          <p>
+            {post.profiles.name} {post.profiles.username}
+          </p>
+          <p>{post.title}</p>
+          <Likes />
+        </div>
+      ))}
     </>
   );
 }
