@@ -21,7 +21,7 @@ export default function Likes({ post }: any) {
       } else {
         await supabase
           .from("likes")
-          .insert([{ user_id: user?.id, post_id: post.id }]);
+          .insert([{ user_id: user.id, post_id: post.id }]);
         router.refresh();
       }
     }

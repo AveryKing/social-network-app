@@ -4,6 +4,7 @@ import AuthButtonServer from "./auth-button-server";
 import { redirect } from "next/navigation";
 import NewPost from "./new-post";
 import Likes from "./likes";
+import Posts from "./posts";
 
 export default async function Home() {
   const supabase = createServerComponentClient<any>({ cookies });
@@ -23,6 +24,7 @@ export default async function Home() {
   const posts =
     data?.map((post) => ({
       ...post,
+      author: Array.isArray(post.author) ? post.author[0] : post.author,
       user_has_liked_post: !!post.likes.find(
         (like: any) => like.user_id === session.user.id
       ),
@@ -32,15 +34,7 @@ export default async function Home() {
     <>
       <AuthButtonServer />
       <NewPost />
-      {posts?.map((post) => (
-        <div key={post.id}>
-          <p>
-            {post.author.name} {post.author.username}
-          </p>
-          <p>{post.title}</p>
-          <Likes post={post} />
-        </div>
-      ))}
+      <Posts posts={posts} />
     </>
   );
 }
