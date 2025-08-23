@@ -10,7 +10,9 @@ export default async function Home() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const { data: posts } = await supabase.from("posts").select("*, profiles(*)");
+  const { data: posts } = await supabase
+    .from("posts")
+    .select("*, profiles(*), likes(*)");
 
   if (!session) {
     redirect("/login");
@@ -25,7 +27,7 @@ export default async function Home() {
             {post.profiles.name} {post.profiles.username}
           </p>
           <p>{post.title}</p>
-          <Likes />
+          <Likes post={post} />
         </div>
       ))}
     </>
