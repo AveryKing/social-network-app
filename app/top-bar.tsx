@@ -20,7 +20,10 @@ export default function TopBar() {
             <a href="#" className="hover:text-blue-500 transition-colors">
               Explore
             </a>
-            <a href="/profile" className="hover:text-blue-500 transition-colors">
+            <a
+              href="/profile"
+              className="hover:text-blue-500 transition-colors"
+            >
               Profile
             </a>
           </nav>
