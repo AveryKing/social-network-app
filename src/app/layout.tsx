@@ -1,6 +1,8 @@
 import { type Metadata } from "next";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Provider } from "@/components/ui/provider";
+import Header from "./_components/header";
+import HeaderServer from "./_components/header-server";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -15,7 +17,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Provider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider>
+            <HeaderServer />
+            {children}
+          </TRPCReactProvider>
         </Provider>
       </body>
     </html>

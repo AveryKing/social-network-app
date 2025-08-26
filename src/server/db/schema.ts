@@ -46,6 +46,9 @@ export const users = createTable("user", (d) => ({
     })
     .default(sql`CURRENT_TIMESTAMP`),
   image: d.varchar({ length: 255 }),
+  onboardingComplete: d.boolean().default(false).notNull(),
+  location: d.varchar({ length: 255 }),
+  bio: d.varchar({ length: 160 }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
