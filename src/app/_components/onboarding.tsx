@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/trpc/react";
 import {
   Box,
   Button,
@@ -32,7 +31,8 @@ export default function Onboarding({ user }: { user: User | null }) {
     email: user?.email ?? "",
   });
 
-  const [photo, setPhoto] = useState<File | null>(null);
+  // eslint wanted `photo` used, so destructure only setter if not needed
+  const [, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   const steps = [
@@ -49,7 +49,7 @@ export default function Onboarding({ user }: { user: User | null }) {
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
   };
@@ -66,7 +66,7 @@ export default function Onboarding({ user }: { user: User | null }) {
           Welcome, {user?.name}
         </Text>
         <Text fontSize="lg" color="gray.300">
-          Let's get your account set up
+          Let&apos;s get your account set up
         </Text>
 
         <Steps.Root
@@ -152,7 +152,7 @@ export default function Onboarding({ user }: { user: User | null }) {
                         document.getElementById("photoInput")?.click()
                       }
                     >
-                      <Text>Drag & drop or click to select</Text>
+                      <Text>Drag &amp; drop or click to select</Text>
                       <Input
                         id="photoInput"
                         type="file"
