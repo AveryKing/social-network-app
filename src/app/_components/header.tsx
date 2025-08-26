@@ -56,13 +56,9 @@ export default function Header({ session }: { session: Session | null }) {
                   <Menu.Content>
                     <Menu.Item value="account">Account</Menu.Item>
                     <Menu.Item value="settings">Settings</Menu.Item>
-                    <Menu.Item
-                      as={Link}
-                      value="logout"
-                      href="/api/auth/signout"
-                    >
-                      Logout
-                    </Menu.Item>
+                    <Link href="/api/auth/signout">
+                      <Menu.Item value="logout">Logout</Menu.Item>{" "}
+                    </Link>
                   </Menu.Content>
                 </Menu.Positioner>
               </Portal>
@@ -70,15 +66,11 @@ export default function Header({ session }: { session: Session | null }) {
           </>
         ) : (
           <>
-            <Button
-              as={Link}
-              href="/api/auth/signin"
-              colorPalette={"white"}
-              fontSize="md"
-              variant="subtle"
-            >
-              Sign in
-            </Button>
+            <Link href="/api/auth/signin">
+              <Button colorPalette={"white"} fontSize="md" variant="subtle">
+                Sign in
+              </Button>
+            </Link>
           </>
         )}
       </Flex>

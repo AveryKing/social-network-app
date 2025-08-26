@@ -61,7 +61,7 @@ export default function Onboarding({ user }: { user: User | null }) {
 
   return (
     <Center minH="100vh" px={4} bg="gray.900">
-      <VStack w="full" maxW="lg" mt="-100px" spacing={8}>
+      <VStack w="full" maxW="lg" mt="-100px">
         <Text fontSize="2xl" fontWeight="bold" color="white">
           Welcome, {user?.name}
         </Text>
@@ -76,7 +76,7 @@ export default function Onboarding({ user }: { user: User | null }) {
           count={steps.length}
           w="full"
         >
-          <Steps.List justify="center">
+          <Steps.List>
             {steps.map((step, index) => (
               <Steps.Item key={index} index={index} title={step.title}>
                 <Steps.Indicator />
@@ -93,7 +93,7 @@ export default function Onboarding({ user }: { user: User | null }) {
           <Steps.Content index={0}>
             <Card.Root bg="gray.800" borderRadius="xl" shadow="md" w="full">
               <Card.Body>
-                <Stack spacing={6}>
+                <Stack>
                   <Text fontSize="lg" fontWeight="semibold" color="white">
                     Basic Information
                   </Text>
@@ -129,7 +129,7 @@ export default function Onboarding({ user }: { user: User | null }) {
           <Steps.Content index={1}>
             <Card.Root bg="gray.800" borderRadius="xl" shadow="md" w="full">
               <Card.Body>
-                <Stack spacing={6} align="center">
+                <Stack align="center">
                   <Text fontSize="lg" fontWeight="semibold" color="white">
                     Upload a Profile Photo
                   </Text>
@@ -166,7 +166,7 @@ export default function Onboarding({ user }: { user: User | null }) {
                       />
                     </Box>
                   ) : (
-                    <Stack spacing={4} w="full" align="center">
+                    <Stack w="full" align="center">
                       <Image
                         src={preview}
                         alt="Preview"
@@ -175,7 +175,7 @@ export default function Onboarding({ user }: { user: User | null }) {
                         maxH="300px"
                         objectFit="cover"
                       />
-                      <ButtonGroup spacing={4}>
+                      <ButtonGroup>
                         <Button
                           colorScheme="red"
                           variant="solid"
