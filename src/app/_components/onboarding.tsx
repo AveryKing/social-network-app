@@ -30,9 +30,27 @@ type User = {
   onboardingComplete: boolean;
 };
 
+interface GooglePlace {
+  formatted_address: string;
+}
+
+interface GoogleAutocomplete {
+  addListener(event: string, handler: () => void): void;
+  getPlace(): GooglePlace;
+}
+
 declare global {
   interface Window {
-    google: any;
+    google: {
+      maps: {
+        places: {
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options: { types: string[] },
+          ) => GoogleAutocomplete;
+        };
+      };
+    };
   }
 }
 
@@ -40,8 +58,8 @@ export default function Onboarding({ user }: { user: User | null }) {
   const [step, setStep] = useState(0);
   const [photoUpdated, setPhotoUpdated] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isFinishing, setIsFinishing] = useState(false); // New state for finish loading
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
 
   const steps = [
@@ -63,7 +81,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const locationInputRef = useRef<HTMLInputElement | null>(null);
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
 
   useEffect(() => {
     if (window.google && locationInputRef.current) {
@@ -73,7 +91,7 @@ export default function Onboarding({ user }: { user: User | null }) {
       );
 
       autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current.getPlace();
+        const place = autocompleteRef.current?.getPlace();
         if (place?.formatted_address) {
           setFormData((prev) => ({
             ...prev,
@@ -107,7 +125,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 
   const validateStep0 = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
@@ -134,7 +152,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   // Real-time validation for step 0
   useEffect(() => {
     if (step === 0) {
-      const newErrors: { [key: string]: string } = {};
+      const newErrors: Record<string, string> = {};
 
       if (!formData.name.trim()) {
         newErrors.name = "Name is required";

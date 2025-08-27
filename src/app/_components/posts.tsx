@@ -10,44 +10,40 @@ type User = {
   onboardingComplete: boolean;
 };
 
-export default async function Posts({ user }: { user: User | null }) {
-  // Placeholder data for demonstration
-  const placeholderPosts = [
-    {
-      id: 1,
-      author: {
-        name: "Jane Cooper",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jane",
-        username: "@janecooper",
-      },
-      content:
-        "Just shipped my latest project! 🚀 Building with #T3Stack has been an amazing experience. The type safety and developer experience is unmatched.",
-      likes: 42,
-      comments: 12,
-      timestamp: "2h ago",
+// Sample posts data
+const placeholderPosts = [
+  {
+    id: 1,
+    author: {
+      name: "Jane Cooper",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jane",
+      username: "@janecooper",
     },
-    {
-      id: 2,
-      author: {
-        name: "Alex Morgan",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-        username: "@amorgan",
-      },
-      content:
-        "Who else is excited about the new React Server Components? The future of web development is looking bright! ✨",
-      likes: 28,
-      comments: 8,
-      timestamp: "4h ago",
+    content:
+      "Just shipped my latest project! 🚀 Building with #T3Stack has been an amazing experience. The type safety and developer experience is unmatched.",
+    likes: 42,
+    comments: 12,
+    timestamp: "2h ago",
+  },
+  {
+    id: 2,
+    author: {
+      name: "Alex Morgan",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+      username: "@amorgan",
     },
-  ];
+    content:
+      "Who else is excited about the new React Server Components? The future of web development is looking bright! ✨",
+    likes: 28,
+    comments: 8,
+    timestamp: "4h ago",
+  },
+];
 
-  // You'll need to get the session from your auth provider
-  // This is just a placeholder - replace with your actual session logic
-  const session = {
-    user: {
-      image: "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
-    },
-  };
+export default function Posts({ user }: { user: User | null }) {
+  if (!user) {
+    return null;
+  }
 
   return (
     <Container maxW="3xl" py={8}>
@@ -63,8 +59,8 @@ export default async function Posts({ user }: { user: User | null }) {
         >
           <Flex gap={4}>
             <Avatar.Root size="md">
-              <Avatar.Image src={user!.image ?? ""} alt="User avatar" />
-              <Avatar.Fallback>{user!.name}</Avatar.Fallback>
+              <Avatar.Image src={user.image ?? ""} alt="User avatar" />
+              <Avatar.Fallback>{user.name ?? "User"}</Avatar.Fallback>
             </Avatar.Root>
             <Box
               flex={1}
@@ -74,7 +70,7 @@ export default async function Posts({ user }: { user: User | null }) {
               cursor="pointer"
               _hover={{ bg: "whiteAlpha.200" }}
             >
-              <Text color="whiteAlpha.600">What's on your mind?</Text>
+              <Text color="whiteAlpha.600">What&apos;s on your mind?</Text>
             </Box>
           </Flex>
         </Box>
