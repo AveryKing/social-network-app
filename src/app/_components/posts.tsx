@@ -3,6 +3,7 @@
 import { Container, VStack, Box, Text } from "@chakra-ui/react";
 import { api } from "~/trpc/react";
 import CreatePost from "./create-post";
+import PostSkeletons from "./post-skeletons";
 
 type User = {
   name: string | null;
@@ -16,13 +17,20 @@ type User = {
 type Post = {
   id: number;
   name: string | null;
+  createdById: string;
   createdAt: Date;
+  updatedAt: Date | null;
   createdBy: {
     id: string;
     name: string | null;
     image: string | null;
   };
 };
+
+interface PostsProps {
+  user: User | null;
+  initialPosts?: Post[] | null;
+}
 
 function PostItem({ post }: { post: Post }) {
   return (
@@ -50,11 +58,20 @@ function PostItem({ post }: { post: Post }) {
   );
 }
 
-export default function Posts({ user }: { user: User | null }) {
-  const { data: posts, refetch } = api.post.getAll.useQuery();
+export default function Posts({ user, initialPosts }: PostsProps) {
+  const { data: posts, refetch, isLoading } = api.post.getAll.useQuery(undefined, {
+    ...(initialPosts && { initialData: initialPosts }),
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+  });
 
   if (!user) {
     return null;
+  }
+
+  // Show skeletons only when loading and no initial data
+  if (isLoading && !initialPosts) {
+    return <PostSkeletons />;
   }
 
   return (
