@@ -1,16 +1,3 @@
-import Link from "next/link";
-import {
-  Box,
-  VStack,
-  Container,
-  Text,
-  Avatar,
-  Flex,
-  IconButton,
-} from "@chakra-ui/react";
-import { FaHeart, FaComment, FaShare } from "react-icons/fa";
-
-import { LatestPost } from "~/app/_components/post";
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import styles from "./index.module.css";
@@ -20,20 +7,23 @@ import Posts from "./_components/posts";
 export default async function Home() {
   const session = await auth();
 
-  if (session?.user) {
-    const user = await api.user.getUser();
-    return (
-      <HydrateClient>
-        <main className={styles.main}>
-          {session && user && !user.onboardingComplete ? (
-            <Onboarding user={user} />
-          ) : (
-            <Posts user={user} />
-          )}
-        </main>
-      </HydrateClient>
-    );
-  } else {
+  if (!session?.user) {
     return <></>;
   }
+
+  const userData = await api.user.getUser();
+
+  if (!userData) {
+    return <></>;
+  }
+
+  return (
+    <main className={styles.main}>
+      {!userData.onboardingComplete ? (
+        <Onboarding user={userData} />
+      ) : (
+        <Posts user={userData} />
+      )}
+    </main>
+  );
 }
