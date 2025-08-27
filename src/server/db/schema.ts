@@ -31,6 +31,13 @@ export const posts = createTable(
   ],
 );
 
+export const postsRelations = relations(posts, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [posts.createdById],
+    references: [users.id],
+  }),
+}));
+
 export const users = createTable("user", (d) => ({
   id: d
     .varchar({ length: 255 })
@@ -53,6 +60,7 @@ export const users = createTable("user", (d) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
+  posts: many(posts),
 }));
 
 export const accounts = createTable(
