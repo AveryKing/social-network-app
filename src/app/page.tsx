@@ -76,26 +76,13 @@ export default async function Home() {
       return <ErrorState message="User data not found" />;
     }
 
-    // Prefetch posts data for completed onboarding users
-    let initialPosts = null;
-    if (userData.onboardingComplete) {
-      try {
-        initialPosts = await api.post.getAll();
-      } catch (error) {
-        console.error("Failed to prefetch posts:", error);
-        // Continue without initial posts - component will handle loading
-      }
-    }
-
     return (
       <main className={styles.main}>
         <Suspense fallback={<Loading />}>
           {!userData.onboardingComplete ? (
             <Onboarding user={userData} />
           ) : (
-            <HydrateClient>
-              <Posts user={userData} initialPosts={initialPosts} />
-            </HydrateClient>
+            <Posts user={userData} />
           )}
         </Suspense>
       </main>

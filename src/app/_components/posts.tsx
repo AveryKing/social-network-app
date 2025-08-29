@@ -1,9 +1,9 @@
 "use client";
 
 import { Container, VStack, Box, Text } from "@chakra-ui/react";
+import { useEffect } from "react";
 import { api } from "~/trpc/react";
 import CreatePost from "./create-post";
-import PostSkeletons from "./post-skeletons";
 
 type User = {
   name: string | null;
@@ -17,20 +17,13 @@ type User = {
 type Post = {
   id: number;
   name: string | null;
-  createdById: string;
   createdAt: Date;
-  updatedAt: Date | null;
   createdBy: {
     id: string;
     name: string | null;
     image: string | null;
   };
 };
-
-interface PostsProps {
-  user: User | null;
-  initialPosts?: Post[] | null;
-}
 
 function PostItem({ post }: { post: Post }) {
   return (
@@ -58,26 +51,41 @@ function PostItem({ post }: { post: Post }) {
   );
 }
 
-export default function Posts({ user, initialPosts }: PostsProps) {
-  const { data: posts, refetch, isLoading } = api.post.getAll.useQuery(undefined, {
-    ...(initialPosts && { initialData: initialPosts }),
-    refetchOnWindowFocus: false,
-    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+export default function Posts({ user }: { user: User | null }) {
+  const { data: posts, refetch } = api.post.getAll.useQuery(undefined, {
+    refetchOnWindowFocus: true, // Refetch when switching back to tab
+    refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 0, // Always consider data potentially stale
   });
+
+  // Listen for cross-tab post updates
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "new-post-created") {
+        void refetch();
+        // Clear the storage event
+        localStorage.removeItem("new-post-created");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [refetch]);
+
+  const handlePostCreated = () => {
+    void refetch();
+    // Notify other tabs
+    localStorage.setItem("new-post-created", Date.now().toString());
+  };
 
   if (!user) {
     return null;
   }
 
-  // Show skeletons only when loading and no initial data
-  if (isLoading && !initialPosts) {
-    return <PostSkeletons />;
-  }
-
   return (
     <Container maxW="3xl" py={8}>
       <VStack align="stretch" gap={4}>
-        <CreatePost user={user} onPostCreated={() => refetch()} />
+        <CreatePost user={user} onPostCreated={handlePostCreated} />
 
         {/* Feed */}
         {posts?.length ? (
