@@ -77,15 +77,17 @@ export default async function Home() {
     }
 
     return (
-      <main className={styles.main}>
-        <Suspense fallback={<Loading />}>
-          {!userData.onboardingComplete ? (
-            <Onboarding user={userData} />
-          ) : (
-            <Posts user={userData} />
-          )}
-        </Suspense>
-      </main>
+      <HydrateClient>
+        <main className={styles.main}>
+          <Suspense fallback={<Loading />}>
+            {!userData.onboardingComplete ? (
+              <Onboarding user={userData} />
+            ) : (
+              <Posts user={userData} />
+            )}
+          </Suspense>
+        </main>
+      </HydrateClient>
     );
   } catch (error) {
     console.error("Error in Home component:", error);

@@ -1,4 +1,3 @@
-// filepath: /Users/avery/t3-social/src/app/_components/post-skeleton.tsx
 import { Box } from "@chakra-ui/react";
 
 export default function PostSkeleton() {
