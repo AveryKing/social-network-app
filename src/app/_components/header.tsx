@@ -48,7 +48,7 @@ export default function Header({ session }: { session: Session | null }) {
               >
                 <Avatar.Root size="lg" colorPalette="cyan">
                   <Avatar.Fallback name={session.user.name!} />
-                  <Avatar.Image src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png" />
+                  <Avatar.Image src={session.user.image ?? undefined} />
                 </Avatar.Root>
               </Menu.Trigger>
               <Portal>

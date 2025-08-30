@@ -1,8 +1,22 @@
 "use client";
 
-import { Container, VStack, Box, Text, Skeleton, SkeletonText } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import {
+  Container,
+  VStack,
+  Box,
+  Text,
+  Skeleton,
+  SkeletonText,
+  HStack,
+  Avatar,
+  IconButton,
+  Menu,
+  Button,
+  Textarea,
+} from "@chakra-ui/react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { FaEllipsisV, FaEdit, FaTrash } from "react-icons/fa";
 import CreatePost from "./create-post";
 
 type User = {
@@ -36,19 +50,21 @@ function PostSkeleton() {
       borderWidth="1px"
       borderColor="whiteAlpha.200"
     >
-      <Box>
-        {/* Author name skeleton */}
-        <Skeleton height="20px" width="120px" mb={2} />
-        
-        {/* Date skeleton */}
-        <Skeleton height="14px" width="80px" mb={3} />
-        
-        {/* Content skeleton */}
-        <SkeletonText 
-          mt={4} 
-          noOfLines={3}
-        />
-      </Box>
+      <HStack gap={3}>
+        {/* Avatar skeleton */}
+        <Skeleton borderRadius="full" width="40px" height="40px" />
+
+        <Box flex={1}>
+          {/* Author name skeleton */}
+          <Skeleton height="20px" width="120px" mb={2} />
+
+          {/* Date skeleton */}
+          <Skeleton height="14px" width="80px" mb={3} />
+
+          {/* Content skeleton */}
+          <SkeletonText mt={4} noOfLines={3} />
+        </Box>
+      </HStack>
     </Box>
   );
 }
@@ -64,33 +80,73 @@ function CreatePostSkeleton() {
       borderWidth="1px"
       borderColor="whiteAlpha.200"
     >
-      <Box display="flex" gap={4}>
+      <HStack gap={3}>
         {/* Avatar skeleton */}
-        <Skeleton 
-          borderRadius="full" 
-          width="48px" 
-          height="48px" 
-        />
+        <Skeleton borderRadius="full" width="48px" height="48px" />
         {/* Input skeleton */}
         <Box flex={1}>
-          <Skeleton 
-            height="16px" 
-            width="200px" 
-            borderRadius="lg"
-          />
+          <Skeleton height="50px" borderRadius="lg" />
         </Box>
-      </Box>
+      </HStack>
     </Box>
   );
 }
 
-function PostItem({ post }: { post: Post }) {
-  // Use useState to avoid hydration mismatch with date formatting
+function PostItem({
+  post,
+  currentUserId,
+  onPostUpdated,
+}: {
+  post: Post;
+  currentUserId: string | null;
+  onPostUpdated: () => void;
+}) {
   const [formattedDate, setFormattedDate] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.name || "");
+
+  const updatePost = api.post.update.useMutation({
+    onSuccess: () => {
+      setIsEditing(false);
+      onPostUpdated();
+    },
+  });
+
+  const deletePost = api.post.delete.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
 
   useEffect(() => {
     setFormattedDate(new Date(post.createdAt).toLocaleDateString());
   }, [post.createdAt]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditContent(post.name || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    await updatePost.mutateAsync({
+      id: post.id,
+      name: editContent.trim(),
+    });
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deletePost.mutateAsync({ id: post.id });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(post.name || "");
+  };
+
+  const isOwner = currentUserId === post.createdBy.id;
 
   return (
     <Box
@@ -102,17 +158,106 @@ function PostItem({ post }: { post: Post }) {
       borderColor="whiteAlpha.200"
       _hover={{ transform: "translateY(-2px)", transition: "all 0.2s" }}
     >
-      <Box>
-        <Text fontWeight="bold" color="white">
-          {post.createdBy.name ?? "Anonymous"}
-        </Text>
-        <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
-          {formattedDate || "Loading..."}
-        </Text>
-        <Text color="white" lineHeight="tall">
-          {post.name}
-        </Text>
-      </Box>
+      <HStack gap={3} align="start">
+        <Avatar.Root size="md">
+          <Avatar.Image
+            src={post.createdBy.image ?? undefined}
+            alt={post.createdBy.name ?? "Anonymous"}
+          />
+          <Avatar.Fallback>
+            {(post.createdBy.name ?? "A").charAt(0)}
+          </Avatar.Fallback>
+        </Avatar.Root>
+        <Box flex={1}>
+          <HStack justify="space-between" align="start">
+            <Box flex={1}>
+              <Text fontWeight="bold" color="white">
+                {post.createdBy.name ?? "Anonymous"}
+              </Text>
+              <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
+                {formattedDate || "Loading..."}
+              </Text>
+            </Box>
+
+            {isOwner && (
+              <HStack gap={1}>
+                <IconButton
+                  aria-label="Edit post"
+                  size="sm"
+                  variant="ghost"
+                  color="whiteAlpha.600"
+                  _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                  onClick={handleEdit}
+                  disabled={isEditing}
+                >
+                  <FaEdit />
+                </IconButton>
+                <IconButton
+                  aria-label="Delete post"
+                  size="sm"
+                  variant="ghost"
+                  color="whiteAlpha.600"
+                  _hover={{ color: "red.400", bg: "whiteAlpha.200" }}
+                  onClick={handleDelete}
+                  disabled={deletePost.isPending}
+                >
+                  <FaTrash />
+                </IconButton>
+              </HStack>
+            )}
+          </HStack>
+
+          {isEditing ? (
+            <VStack align="stretch" gap={3}>
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                bg="whiteAlpha.100"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                color="white"
+                _focus={{
+                  borderColor: "blue.400",
+                  boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)",
+                }}
+                maxLength={280}
+              />
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="whiteAlpha.600">
+                  {editContent.length}/280
+                </Text>
+                <HStack gap={2}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    color="whiteAlpha.700"
+                    _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    onClick={handleSaveEdit}
+                    disabled={
+                      updatePost.isPending ||
+                      !editContent.trim() ||
+                      editContent.length > 280
+                    }
+                  >
+                    Save
+                  </Button>
+                </HStack>
+              </HStack>
+            </VStack>
+          ) : (
+            <Text color="white" lineHeight="tall">
+              {post.name}
+            </Text>
+          )}
+        </Box>
+      </HStack>
     </Box>
   );
 }
@@ -120,7 +265,13 @@ function PostItem({ post }: { post: Post }) {
 export default function Posts({ user }: { user: User | null }) {
   const [isClient, setIsClient] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const { data: posts, refetch, isLoading, isFetching, isSuccess } = api.post.getAll.useQuery(undefined, {
+  const {
+    data: posts,
+    refetch,
+    isLoading,
+    isFetching,
+    isSuccess,
+  } = api.post.getAll.useQuery(undefined, {
     refetchOnWindowFocus: true,
     refetchInterval: 30000,
     staleTime: 0,
@@ -184,7 +335,14 @@ export default function Posts({ user }: { user: User | null }) {
             <PostSkeleton />
           </>
         ) : posts?.length ? (
-          posts.map((post) => <PostItem key={post.id} post={post} />)
+          posts.map((post) => (
+            <PostItem
+              key={post.id}
+              post={post}
+              currentUserId={user?.id ?? null}
+              onPostUpdated={handlePostCreated}
+            />
+          ))
         ) : (
           <Box bg="whiteAlpha.50" borderRadius="xl" p={6} textAlign="center">
             <Text color="whiteAlpha.600">

@@ -31,13 +31,6 @@ export const posts = createTable(
   ],
 );
 
-export const postsRelations = relations(posts, ({ one }) => ({
-  createdBy: one(users, {
-    fields: [posts.createdById],
-    references: [users.id],
-  }),
-}));
-
 export const users = createTable("user", (d) => ({
   id: d
     .varchar({ length: 255 })
@@ -56,6 +49,13 @@ export const users = createTable("user", (d) => ({
   onboardingComplete: d.boolean().default(false).notNull(),
   location: d.varchar({ length: 255 }),
   bio: d.varchar({ length: 160 }),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [posts.createdById],
+    references: [users.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({

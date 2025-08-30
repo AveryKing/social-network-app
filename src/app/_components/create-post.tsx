@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex, Avatar, Textarea, Button, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Textarea,
+  Button,
+  HStack,
+  Avatar,
+  VStack,
+  Text,
+} from "@chakra-ui/react";
 import { api } from "~/trpc/react";
 
 type User = {
@@ -13,35 +21,41 @@ type User = {
   onboardingComplete: boolean;
 };
 
-interface CreatePostProps {
+export default function CreatePost({
+  user,
+  onPostCreated,
+}: {
   user: User;
-  onPostCreated?: () => void;
-}
-
-export default function CreatePost({ user, onPostCreated }: CreatePostProps) {
+  onPostCreated: () => void;
+}) {
   const [content, setContent] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const createPost = api.post.create.useMutation({
     onSuccess: () => {
       setContent("");
-      setIsExpanded(false);
-      onPostCreated?.();
+      setIsFocused(false);
+      onPostCreated();
     },
   });
 
-  const handleSubmit = async () => {
-    if (content.trim()) {
-      await createPost.mutateAsync({ content: content.trim() });
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+
+    await createPost.mutateAsync({ name: content.trim() });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      void handleSubmit();
+      handleSubmit(e);
     }
   };
+
+  const characterCount = content.length;
+  const maxCharacters = 280;
+  const isOverLimit = characterCount > maxCharacters;
 
   return (
     <Box
@@ -52,75 +66,75 @@ export default function CreatePost({ user, onPostCreated }: CreatePostProps) {
       borderWidth="1px"
       borderColor="whiteAlpha.200"
     >
-      <Flex gap={4}>
-        <Avatar.Root size="md">
-          <Avatar.Image
-            src={
-              user.image ??
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
-            }
-            alt={user.name ?? "User avatar"}
-          />
-          <Avatar.Fallback>{user.name?.[0] ?? "U"}</Avatar.Fallback>
-        </Avatar.Root>
-        <Box flex={1}>
-          {!isExpanded ? (
-            <Box
+      <form onSubmit={handleSubmit}>
+        <HStack align="start" gap={3}>
+          <Avatar.Root size="md">
+            <Avatar.Image
+              src={user.image ?? undefined}
+              alt={user.name ?? "You"}
+            />
+            <Avatar.Fallback>{(user.name ?? "Y").charAt(0)}</Avatar.Fallback>
+          </Avatar.Root>
+
+          <VStack flex={1} align="stretch" gap={3}>
+            <Textarea
+              placeholder="What's on your mind?"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={handleKeyDown}
+              resize="none"
+              minH={isFocused ? "120px" : "50px"}
               bg="whiteAlpha.100"
-              borderRadius="lg"
-              p={4}
-              cursor="pointer"
-              _hover={{ bg: "whiteAlpha.200" }}
-              onClick={() => setIsExpanded(true)}
-            >
-              <Text color="whiteAlpha.600">What&apos;s on your mind?</Text>
-            </Box>
-          ) : (
-            <Box>
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="What's on your mind?"
-                resize="none"
-                minH="100px"
-                maxLength={280}
-                bg="whiteAlpha.100"
-                border="none"
-                _focus={{ bg: "whiteAlpha.200", outline: "none" }}
-                color="white"
-                autoFocus
-              />
-              <Flex justify="space-between" align="center" mt={3}>
-                <Text fontSize="sm" color="whiteAlpha.600">
-                  {content.length}/280
+              border="1px solid"
+              borderColor="whiteAlpha.300"
+              color="white"
+              _placeholder={{ color: "whiteAlpha.600" }}
+              _focus={{
+                borderColor: "blue.400",
+                boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)",
+              }}
+              transition="all 0.2s"
+            />
+
+            {isFocused && (
+              <HStack justify="space-between">
+                <Text
+                  fontSize="sm"
+                  color={isOverLimit ? "red.400" : "whiteAlpha.600"}
+                >
+                  {characterCount}/{maxCharacters}
                 </Text>
-                <Flex gap={2}>
+
+                <HStack gap={2}>
                   <Button
-                    size="sm"
                     variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setContent("");
-                      setIsExpanded(false);
+                      setIsFocused(false);
                     }}
+                    color="whiteAlpha.700"
+                    _hover={{ color: "white", bg: "whiteAlpha.200" }}
                   >
                     Cancel
                   </Button>
                   <Button
+                    type="submit"
                     size="sm"
                     colorScheme="blue"
-                    onClick={handleSubmit}
                     loading={createPost.isPending}
-                    disabled={!content.trim() || content.length > 280}
+                    loadingText="Posting..."
+                    disabled={!content.trim() || isOverLimit}
                   >
                     Post
                   </Button>
-                </Flex>
-              </Flex>
-            </Box>
-          )}
-        </Box>
-      </Flex>
+                </HStack>
+              </HStack>
+            )}
+          </VStack>
+        </HStack>
+      </form>
     </Box>
   );
 }
