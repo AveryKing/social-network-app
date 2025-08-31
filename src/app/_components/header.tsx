@@ -36,16 +36,16 @@ export default function Header({ session }: { session: Session | null }) {
     >
       <Flex h={14} alignItems="center" justifyContent="space-between">
         <HStack alignItems="center">
-          <Box 
-            color="cyan.300" 
-            fontWeight="bold" 
+          <Box
+            color="cyan.300"
+            fontWeight="bold"
             fontSize="2xl"
             letterSpacing="tight"
             textShadow="0 1px 2px rgba(0, 0, 0, 0.5)"
             _hover={{
               color: "cyan.200",
               transition: "all 0.2s",
-              transform: "scale(1.02)"
+              transform: "scale(1.02)",
             }}
           >
             Social
@@ -67,7 +67,7 @@ export default function Header({ session }: { session: Session | null }) {
               _focus={{
                 borderColor: "blue.400",
                 boxShadow: "0 0 0 1px rgba(59, 130, 246, 0.5)",
-                bg: "whiteAlpha.200"
+                bg: "whiteAlpha.200",
               }}
               paddingLeft={10}
               borderRadius="full"
@@ -95,7 +95,7 @@ export default function Header({ session }: { session: Session | null }) {
                 _hover={{
                   bg: "whiteAlpha.200",
                   color: "white",
-                  transform: "scale(1.05)"
+                  transform: "scale(1.05)",
                 }}
                 transition="all 0.2s"
                 position="relative"
@@ -127,12 +127,16 @@ export default function Header({ session }: { session: Session | null }) {
                     maxH="400px"
                     overflowY="auto"
                   >
-                    <Box p={3} borderBottom="1px solid" borderColor="whiteAlpha.200">
+                    <Box
+                      p={3}
+                      borderBottom="1px solid"
+                      borderColor="whiteAlpha.200"
+                    >
                       <Box color="white" fontWeight="semibold" fontSize="md">
                         Notifications
                       </Box>
                     </Box>
-                    <Menu.Item 
+                    <Menu.Item
                       value="notification1"
                       color="white"
                       _hover={{ bg: "whiteAlpha.200" }}
@@ -140,32 +144,44 @@ export default function Header({ session }: { session: Session | null }) {
                     >
                       <Box>
                         <Box fontWeight="medium">John liked your post</Box>
-                        <Box fontSize="sm" color="whiteAlpha.600">2 minutes ago</Box>
+                        <Box fontSize="sm" color="whiteAlpha.600">
+                          2 minutes ago
+                        </Box>
                       </Box>
                     </Menu.Item>
-                    <Menu.Item 
+                    <Menu.Item
                       value="notification2"
                       color="white"
                       _hover={{ bg: "whiteAlpha.200" }}
                       p={3}
                     >
                       <Box>
-                        <Box fontWeight="medium">Sarah started following you</Box>
-                        <Box fontSize="sm" color="whiteAlpha.600">1 hour ago</Box>
+                        <Box fontWeight="medium">
+                          Sarah started following you
+                        </Box>
+                        <Box fontSize="sm" color="whiteAlpha.600">
+                          1 hour ago
+                        </Box>
                       </Box>
                     </Menu.Item>
-                    <Menu.Item 
+                    <Menu.Item
                       value="notification3"
                       color="white"
                       _hover={{ bg: "whiteAlpha.200" }}
                       p={3}
                     >
                       <Box>
-                        <Box fontWeight="medium">New comment on your post</Box>
-                        <Box fontSize="sm" color="whiteAlpha.600">3 hours ago</Box>
+                        <Box fontWeight="medium">Mike followed you back</Box>
+                        <Box fontSize="sm" color="whiteAlpha.600">
+                          3 hours ago
+                        </Box>
                       </Box>
                     </Menu.Item>
-                    <Box p={3} borderTop="1px solid" borderColor="whiteAlpha.200">
+                    <Box
+                      p={3}
+                      borderTop="1px solid"
+                      borderColor="whiteAlpha.200"
+                    >
                       <Button
                         size="sm"
                         variant="ghost"
@@ -194,8 +210,8 @@ export default function Header({ session }: { session: Session | null }) {
                 }}
               >
                 <Avatar.Root size="md" colorPalette="blue">
-                  <Avatar.Fallback 
-                    name={session.user.name!} 
+                  <Avatar.Fallback
+                    name={session.user.name!}
                     bg="blue.500"
                     color="white"
                     fontWeight="semibold"
@@ -214,7 +230,7 @@ export default function Header({ session }: { session: Session | null }) {
                     minW="200px"
                   >
                     <Link href="/profile">
-                      <Menu.Item 
+                      <Menu.Item
                         value="profile"
                         color="white"
                         _hover={{ bg: "whiteAlpha.200" }}
@@ -223,7 +239,7 @@ export default function Header({ session }: { session: Session | null }) {
                         Profile
                       </Menu.Item>
                     </Link>
-                    <Menu.Item 
+                    <Menu.Item
                       value="settings"
                       color="white"
                       _hover={{ bg: "whiteAlpha.200" }}
@@ -232,7 +248,7 @@ export default function Header({ session }: { session: Session | null }) {
                       Settings
                     </Menu.Item>
                     <Link href="/api/auth/signout">
-                      <Menu.Item 
+                      <Menu.Item
                         value="logout"
                         color="red.300"
                         _hover={{ bg: "red.900", color: "red.200" }}
@@ -249,8 +265,8 @@ export default function Header({ session }: { session: Session | null }) {
         ) : (
           <HStack gap={3}>
             <Link href="/api/auth/signin">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 colorScheme="blue"
                 size="sm"
                 fontWeight="semibold"
@@ -261,7 +277,7 @@ export default function Header({ session }: { session: Session | null }) {
                   color: "white",
                   borderColor: "blue.500",
                   transform: "translateY(-1px)",
-                  boxShadow: "lg"
+                  boxShadow: "lg",
                 }}
                 transition="all 0.2s"
               >

@@ -106,6 +106,7 @@ function PostItem({
   const [formattedDate, setFormattedDate] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.name ?? "");
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const updatePost = api.post.update.useMutation({
     onSuccess: () => {
@@ -131,6 +132,33 @@ function PostItem({
       onPostUpdated();
     },
   });
+
+  const followUser = api.user.follow.useMutation({
+    onSuccess: () => {
+      setIsFollowing(true);
+    },
+  });
+
+  const unfollowUser = api.user.unfollow.useMutation({
+    onSuccess: () => {
+      setIsFollowing(false);
+    },
+  });
+
+  // Check if user is following this post author
+  const { data: userData } = api.user.getById.useQuery(
+    { id: post.createdBy.id },
+    {
+      enabled: !!currentUserId && post.createdBy.id !== currentUserId,
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  useEffect(() => {
+    if (userData?.isFollowing !== undefined) {
+      setIsFollowing(userData.isFollowing);
+    }
+  }, [userData?.isFollowing]);
 
   useEffect(() => {
     setFormattedDate(new Date(post.createdAt).toLocaleDateString());
@@ -195,16 +223,43 @@ function PostItem({
         <Box flex={1}>
           <HStack justify="space-between" align="start">
             <Box flex={1}>
-              <Link href={`/user/${post.createdBy.id}`}>
-                <Text
-                  fontWeight="bold"
-                  color="white"
-                  _hover={{ color: "blue.300", cursor: "pointer" }}
-                  transition="color 0.2s"
-                >
-                  {post.createdBy.name ?? "Anonymous"}
-                </Text>
-              </Link>
+              <HStack align="center" gap={2}>
+                <Link href={`/user/${post.createdBy.id}`}>
+                  <Text
+                    fontWeight="bold"
+                    color="white"
+                    _hover={{ color: "blue.300", cursor: "pointer" }}
+                    transition="color 0.2s"
+                  >
+                    {post.createdBy.name ?? "Anonymous"}
+                  </Text>
+                </Link>
+                {currentUserId && post.createdBy.id !== currentUserId && (
+                  <Button
+                    size="xs"
+                    variant={isFollowing ? "outline" : "solid"}
+                    colorScheme={isFollowing ? "gray" : "blue"}
+                    onClick={async () => {
+                      if (isFollowing) {
+                        await unfollowUser.mutateAsync({
+                          userId: post.createdBy.id,
+                        });
+                      } else {
+                        await followUser.mutateAsync({
+                          userId: post.createdBy.id,
+                        });
+                      }
+                    }}
+                    loading={followUser.isPending || unfollowUser.isPending}
+                    px={2}
+                    py={1}
+                    fontSize="xs"
+                    h="auto"
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </Button>
+                )}
+              </HStack>
               <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
                 {formattedDate || "Loading..."}
               </Text>

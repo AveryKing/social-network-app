@@ -66,6 +66,9 @@ type User = {
   bio: string | null;
   onboardingComplete: boolean;
   emailVerified: Date | null;
+  followerCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
 };
 
 type Post = {
@@ -341,6 +344,8 @@ export default function Profile({
     bio: user.bio ?? "",
     location: user.location ?? "",
   });
+  const [isFollowing, setIsFollowing] = useState(user.isFollowing ?? false);
+  const [followerCount, setFollowerCount] = useState(user.followerCount ?? 0);
 
   const locationInputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -349,6 +354,20 @@ export default function Profile({
     onSuccess: () => {
       setIsEditing(false);
       window.location.reload();
+    },
+  });
+
+  const followUser = api.user.follow.useMutation({
+    onSuccess: () => {
+      setIsFollowing(true);
+      setFollowerCount((prev) => prev + 1);
+    },
+  });
+
+  const unfollowUser = api.user.unfollow.useMutation({
+    onSuccess: () => {
+      setIsFollowing(false);
+      setFollowerCount((prev) => Math.max(0, prev - 1));
     },
   });
 
@@ -475,7 +494,7 @@ export default function Profile({
                           {user.email}
                         </Text>
                       </VStack>
-                      {isOwnProfile && (
+                      {isOwnProfile ? (
                         <Button
                           onClick={() => setIsEditing(!isEditing)}
                           size="sm"
@@ -493,6 +512,29 @@ export default function Profile({
                           <Box ml={2}>
                             {isEditing ? "Cancel" : "Edit Profile"}
                           </Box>
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={async () => {
+                            if (isFollowing) {
+                              await unfollowUser.mutateAsync({
+                                userId: user.id,
+                              });
+                            } else {
+                              await followUser.mutateAsync({ userId: user.id });
+                            }
+                          }}
+                          size="sm"
+                          variant={isFollowing ? "outline" : "solid"}
+                          colorScheme={isFollowing ? "gray" : "blue"}
+                          loading={
+                            followUser.isPending || unfollowUser.isPending
+                          }
+                          _hover={{
+                            transform: "scale(1.05)",
+                          }}
+                        >
+                          {isFollowing ? "Unfollow" : "Follow"}
                         </Button>
                       )}
                     </HStack>
@@ -513,7 +555,7 @@ export default function Profile({
                       </VStack>
                       <VStack align="center" gap={1}>
                         <Text fontSize="2xl" fontWeight="bold" color="white">
-                          0
+                          {user.followingCount ?? 0}
                         </Text>
                         <Text
                           fontSize="sm"
@@ -525,7 +567,7 @@ export default function Profile({
                       </VStack>
                       <VStack align="center" gap={1}>
                         <Text fontSize="2xl" fontWeight="bold" color="white">
-                          0
+                          {followerCount}
                         </Text>
                         <Text
                           fontSize="sm"

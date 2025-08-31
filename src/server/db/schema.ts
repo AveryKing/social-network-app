@@ -54,6 +54,29 @@ export const likes = createTable(
   ],
 );
 
+export const follows = createTable(
+  "follow",
+  (d) => ({
+    followerId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    followingId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.followerId, t.followingId] }),
+    index("follow_follower_id_idx").on(t.followerId),
+    index("follow_following_id_idx").on(t.followingId),
+  ],
+);
+
 export const users = createTable("user", (d) => ({
   id: d
     .varchar({ length: 255 })
@@ -93,10 +116,25 @@ export const likesRelations = relations(likes, ({ one }) => ({
   }),
 }));
 
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(users, {
+    fields: [follows.followerId],
+    references: [users.id],
+    relationName: "follower",
+  }),
+  following: one(users, {
+    fields: [follows.followingId],
+    references: [users.id],
+    relationName: "following",
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   posts: many(posts),
   likes: many(likes),
+  followers: many(follows, { relationName: "following" }),
+  following: many(follows, { relationName: "follower" }),
 }));
 
 export const accounts = createTable(
