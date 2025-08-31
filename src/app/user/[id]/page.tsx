@@ -6,8 +6,9 @@ import Profile from "~/app/_components/profile";
 export default async function UserProfilePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user) {
@@ -15,12 +16,12 @@ export default async function UserProfilePage({
   }
 
   // If viewing own profile, redirect to /profile
-  if (params.id === session.user.id) {
+  if (id === session.user.id) {
     redirect("/profile");
   }
 
   try {
-    const user = await api.user.getById({ id: params.id });
+    const user = await api.user.getById({ id });
 
     if (!user) {
       notFound();
