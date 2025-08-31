@@ -16,5 +16,5 @@ export default async function ProfilePage() {
     redirect("/api/auth/signin");
   }
 
-  return <Profile user={user} />;
+  return <Profile user={user} currentUserId={session.user.id} />;
 }

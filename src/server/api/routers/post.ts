@@ -57,10 +57,9 @@ export const postRouter = createTRPCRouter({
     const postsWithLikes = allPosts.map((post) => ({
       ...post,
       likeCount: post.likes.length,
-      isLikedByUser: 
-        ctx.session?.user?.id
-          ? post.likes.some((like) => like.userId === ctx.session!.user.id)
-          : false,
+      isLikedByUser: ctx.session?.user?.id
+        ? post.likes.some((like) => like.userId === ctx.session!.user.id)
+        : false,
       likes: undefined, // Remove the likes array from response
     }));
 
@@ -93,10 +92,9 @@ export const postRouter = createTRPCRouter({
       const postsWithLikes = userPosts.map((post) => ({
         ...post,
         likeCount: post.likes.length,
-        isLikedByUser: 
-          ctx.session?.user?.id
-            ? post.likes.some((like) => like.userId === ctx.session!.user.id)
-            : false,
+        isLikedByUser: ctx.session?.user?.id
+          ? post.likes.some((like) => like.userId === ctx.session!.user.id)
+          : false,
         likes: undefined, // Remove the likes array from response
       }));
 
@@ -150,6 +148,10 @@ export const postRouter = createTRPCRouter({
         );
       }
 
+      // First delete all likes associated with this post
+      await ctx.db.delete(likes).where(eq(likes.postId, input.id));
+
+      // Then delete the post
       await ctx.db.delete(posts).where(eq(posts.id, input.id));
     }),
 

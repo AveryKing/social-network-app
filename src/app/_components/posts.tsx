@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { FaEdit, FaTrash, FaHeart } from "react-icons/fa";
 import CreatePost from "./create-post";
+import Link from "next/link";
 
 type User = {
   name: string | null;
@@ -161,7 +162,7 @@ function PostItem({
 
   const handleLike = async () => {
     if (!currentUserId) return;
-    
+
     if (post.isLikedByUser) {
       await unlikePost.mutateAsync({ postId: post.id });
     } else {
@@ -194,9 +195,16 @@ function PostItem({
         <Box flex={1}>
           <HStack justify="space-between" align="start">
             <Box flex={1}>
-              <Text fontWeight="bold" color="white">
-                {post.createdBy.name ?? "Anonymous"}
-              </Text>
+              <Link href={`/user/${post.createdBy.id}`}>
+                <Text
+                  fontWeight="bold"
+                  color="white"
+                  _hover={{ color: "blue.300", cursor: "pointer" }}
+                  transition="color 0.2s"
+                >
+                  {post.createdBy.name ?? "Anonymous"}
+                </Text>
+              </Link>
               <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
                 {formattedDate || "Loading..."}
               </Text>
@@ -279,7 +287,7 @@ function PostItem({
               {post.name}
             </Text>
           )}
-          
+
           {/* Like button section */}
           <HStack mt={4} justify="space-between" align="center">
             <HStack gap={2}>
@@ -288,17 +296,19 @@ function PostItem({
                 size="sm"
                 variant="ghost"
                 color={post.isLikedByUser ? "red.400" : "whiteAlpha.600"}
-                _hover={{ 
-                  color: post.isLikedByUser ? "red.500" : "red.400", 
-                  bg: "whiteAlpha.200" 
+                _hover={{
+                  color: post.isLikedByUser ? "red.500" : "red.400",
+                  bg: "whiteAlpha.200",
                 }}
                 onClick={handleLike}
-                disabled={!currentUserId || likePost.isPending || unlikePost.isPending}
+                disabled={
+                  !currentUserId || likePost.isPending || unlikePost.isPending
+                }
               >
                 <FaHeart />
               </IconButton>
               <Text color="whiteAlpha.700" fontSize="sm">
-                {post.likeCount} {post.likeCount === 1 ? 'like' : 'likes'}
+                {post.likeCount} {post.likeCount === 1 ? "like" : "likes"}
               </Text>
             </HStack>
           </HStack>
