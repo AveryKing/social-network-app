@@ -30,9 +30,30 @@ type User = {
   onboardingComplete: boolean;
 };
 
+// Google Maps types
+interface GooglePlace {
+  formatted_address?: string;
+}
+
+interface GoogleAutocomplete {
+  addListener: (event: string, callback: () => void) => void;
+  getPlace: () => GooglePlace;
+}
+
+interface GoogleMaps {
+  places: {
+    Autocomplete: new (
+      input: HTMLInputElement,
+      options?: { types: string[] }
+    ) => GoogleAutocomplete;
+  };
+}
+
 declare global {
   interface Window {
-    google: any;
+    google: {
+      maps: GoogleMaps;
+    };
   }
 }
 
@@ -41,7 +62,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   const [photoUpdated, setPhotoUpdated] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false); // New state for finish loading
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
 
   const steps = [
@@ -63,7 +84,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const locationInputRef = useRef<HTMLInputElement | null>(null);
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
 
   useEffect(() => {
     if (window.google && locationInputRef.current) {
@@ -73,12 +94,15 @@ export default function Onboarding({ user }: { user: User | null }) {
       );
 
       autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current.getPlace();
-        if (place?.formatted_address) {
-          setFormData((prev) => ({
-            ...prev,
-            location: place.formatted_address,
-          }));
+        const autocomplete = autocompleteRef.current;
+        if (autocomplete) {
+          const place = autocomplete.getPlace();
+          if (place?.formatted_address) {
+            setFormData((prev) => ({
+              ...prev,
+              location: place.formatted_address ?? "",
+            }));
+          }
         }
       });
     }
@@ -107,7 +131,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 
   const validateStep0 = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
@@ -134,7 +158,7 @@ export default function Onboarding({ user }: { user: User | null }) {
   // Real-time validation for step 0
   useEffect(() => {
     if (step === 0) {
-      const newErrors: { [key: string]: string } = {};
+      const newErrors: Record<string, string> = {};
 
       if (!formData.name.trim()) {
         newErrors.name = "Name is required";

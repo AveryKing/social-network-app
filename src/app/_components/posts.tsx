@@ -10,13 +10,12 @@ import {
   HStack,
   Avatar,
   IconButton,
-  Menu,
   Button,
   Textarea,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { FaEllipsisV, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import CreatePost from "./create-post";
 
 type User = {
@@ -103,7 +102,7 @@ function PostItem({
 }) {
   const [formattedDate, setFormattedDate] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(post.name || "");
+  const [editContent, setEditContent] = useState(post.name ?? "");
 
   const updatePost = api.post.update.useMutation({
     onSuccess: () => {
@@ -124,7 +123,7 @@ function PostItem({
 
   const handleEdit = () => {
     setIsEditing(true);
-    setEditContent(post.name || "");
+    setEditContent(post.name ?? "");
   };
 
   const handleSaveEdit = async () => {
@@ -143,7 +142,7 @@ function PostItem({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditContent(post.name || "");
+    setEditContent(post.name ?? "");
   };
 
   const isOwner = currentUserId === post.createdBy.id;
@@ -269,7 +268,6 @@ export default function Posts({ user }: { user: User | null }) {
     data: posts,
     refetch,
     isLoading,
-    isFetching,
     isSuccess,
   } = api.post.getAll.useQuery(undefined, {
     refetchOnWindowFocus: true,

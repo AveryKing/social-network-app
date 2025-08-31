@@ -49,7 +49,7 @@ export default function CreatePost({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      handleSubmit(e);
+      void handleSubmit(e);
     }
   };
 
