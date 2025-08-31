@@ -15,6 +15,7 @@ import {
   SkeletonText,
   Textarea,
   Input,
+  IconButton,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import {
@@ -22,6 +23,7 @@ import {
   FaMapMarkerAlt,
   FaCalendarAlt,
   FaArrowLeft,
+  FaTrash,
 } from "react-icons/fa";
 import { api } from "~/trpc/react";
 import Link from "next/link";
@@ -70,12 +72,61 @@ function PostSkeleton() {
   );
 }
 
-function UserPost({ post }: { post: Post }) {
+function UserPost({ 
+  post, 
+  currentUserId, 
+  onPostUpdated 
+}: { 
+  post: Post; 
+  currentUserId: string | null;
+  onPostUpdated: () => void;
+}) {
   const [formattedDate, setFormattedDate] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.name ?? "");
+
+  const updatePost = api.post.update.useMutation({
+    onSuccess: () => {
+      setIsEditing(false);
+      onPostUpdated();
+    },
+  });
+
+  const deletePost = api.post.delete.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
 
   useEffect(() => {
     setFormattedDate(new Date(post.createdAt).toLocaleDateString());
   }, [post.createdAt]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditContent(post.name ?? "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    await updatePost.mutateAsync({
+      id: post.id,
+      name: editContent.trim(),
+    });
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deletePost.mutateAsync({ id: post.id });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(post.name ?? "");
+  };
+
+  const isOwner = currentUserId === post.createdBy.id;
 
   return (
     <Box
@@ -98,15 +149,93 @@ function UserPost({ post }: { post: Post }) {
           </Avatar.Fallback>
         </Avatar.Root>
         <Box flex={1}>
-          <Text fontWeight="bold" color="white">
-            {post.createdBy.name ?? "Anonymous"}
-          </Text>
-          <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
-            {formattedDate || "Loading..."}
-          </Text>
-          <Text color="white" lineHeight="tall">
-            {post.name}
-          </Text>
+          <HStack justify="space-between" align="start">
+            <Box flex={1}>
+              <Text fontWeight="bold" color="white">
+                {post.createdBy.name ?? "Anonymous"}
+              </Text>
+              <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
+                {formattedDate || "Loading..."}
+              </Text>
+            </Box>
+
+            {isOwner && (
+              <HStack gap={1}>
+                <IconButton
+                  aria-label="Edit post"
+                  size="sm"
+                  variant="ghost"
+                  color="whiteAlpha.600"
+                  _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                  onClick={handleEdit}
+                  disabled={isEditing}
+                >
+                  <FaEdit />
+                </IconButton>
+                <IconButton
+                  aria-label="Delete post"
+                  size="sm"
+                  variant="ghost"
+                  color="whiteAlpha.600"
+                  _hover={{ color: "red.400", bg: "whiteAlpha.200" }}
+                  onClick={handleDelete}
+                  disabled={deletePost.isPending}
+                >
+                  <FaTrash />
+                </IconButton>
+              </HStack>
+            )}
+          </HStack>
+
+          {isEditing ? (
+            <VStack align="stretch" gap={3}>
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                bg="whiteAlpha.100"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                color="white"
+                _focus={{
+                  borderColor: "blue.400",
+                  boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)",
+                }}
+                maxLength={280}
+              />
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="whiteAlpha.600">
+                  {editContent.length}/280
+                </Text>
+                <HStack gap={2}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    color="whiteAlpha.700"
+                    _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    onClick={handleSaveEdit}
+                    disabled={
+                      updatePost.isPending ||
+                      !editContent.trim() ||
+                      editContent.length > 280
+                    }
+                  >
+                    Save
+                  </Button>
+                </HStack>
+              </HStack>
+            </VStack>
+          ) : (
+            <Text color="white" lineHeight="tall">
+              {post.name}
+            </Text>
+          )}
         </Box>
       </HStack>
     </Box>
@@ -128,10 +257,14 @@ export default function Profile({ user }: { user: User }) {
     },
   });
 
-  const { data: userPosts, isLoading: postsLoading } =
+  const { data: userPosts, isLoading: postsLoading, refetch: refetchPosts } =
     api.post.getUserPosts.useQuery({
       userId: user.id,
     });
+
+  const handlePostUpdated = () => {
+    void refetchPosts();
+  };
 
   const handleSaveProfile = async () => {
     await updateUser.mutateAsync({
@@ -344,7 +477,7 @@ export default function Profile({ user }: { user: User }) {
                     />
                     <HStack justify="space-between" mt={2}>
                       <Text fontSize="xs" color="whiteAlpha.600">
-                        Share your interests, profession, or anything you'd like
+                        Share your interests, profession, or anything you&apos;d like
                         others to know
                       </Text>
                       <Text
@@ -482,7 +615,12 @@ export default function Profile({ user }: { user: User }) {
             </>
           ) : userPosts && userPosts.length > 0 ? (
             userPosts.map((post: Post) => (
-              <UserPost key={post.id} post={post} />
+              <UserPost 
+                key={post.id} 
+                post={post} 
+                currentUserId={user.id}
+                onPostUpdated={handlePostUpdated}
+              />
             ))
           ) : (
             <Box bg="whiteAlpha.50" borderRadius="xl" p={6} textAlign="center">
