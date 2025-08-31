@@ -29,6 +29,7 @@ import {
 import { api } from "~/trpc/react";
 import Link from "next/link";
 import Script from "next/script";
+import { useRouter } from "next/navigation";
 
 // Google Maps types
 interface GooglePlace {
@@ -118,6 +119,7 @@ function UserPost({
   const [formattedDate, setFormattedDate] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.name ?? "");
+  const router = useRouter();
 
   const updatePost = api.post.update.useMutation({
     onSuccess: () => {
@@ -207,15 +209,23 @@ function UserPost({
         <Box flex={1}>
           <HStack justify="space-between" align="start">
             <Box flex={1}>
-              <Link href={`/user/${post.createdBy.id}`}>
-                <Text
-                  fontWeight="bold"
-                  color="white"
-                  _hover={{ color: "blue.300", cursor: "pointer" }}
-                  transition="color 0.2s"
-                >
-                  {post.createdBy.name ?? "Anonymous"}
-                </Text>
+              <Text
+                fontWeight="bold"
+                color="white"
+                _hover={{ color: "blue.300", cursor: "pointer" }}
+                transition="color 0.2s"
+                onClick={() => router.push(`/user/${post.createdBy.id}`)}
+                cursor="pointer"
+              >
+                {post.createdBy.name ?? "Anonymous"}
+              </Text>
+              {/* Hidden prefetch link for instant navigation */}
+              <Link
+                href={`/user/${post.createdBy.id}`}
+                prefetch={true}
+                style={{ display: "none" }}
+              >
+                <span></span>
               </Link>
               <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
                 {formattedDate || "Loading..."}

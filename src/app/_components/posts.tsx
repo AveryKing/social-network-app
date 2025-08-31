@@ -18,6 +18,7 @@ import { api } from "~/trpc/react";
 import { FaEdit, FaTrash, FaHeart } from "react-icons/fa";
 import CreatePost from "./create-post";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type User = {
   name: string | null;
@@ -107,6 +108,7 @@ function PostItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.name ?? "");
   const [isFollowing, setIsFollowing] = useState(false);
+  const router = useRouter();
 
   const updatePost = api.post.update.useMutation({
     onSuccess: () => {
@@ -151,6 +153,24 @@ function PostItem({
     {
       enabled: !!currentUserId && post.createdBy.id !== currentUserId,
       refetchOnWindowFocus: false,
+    },
+  );
+
+  // Prefetch user data for instant navigation
+  api.user.getById.useQuery(
+    { id: post.createdBy.id },
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  );
+
+  // Prefetch user posts for instant profile loading
+  api.post.getUserPosts.useQuery(
+    { userId: post.createdBy.id },
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 2 * 60 * 1000, // 2 minutes
     },
   );
 
@@ -224,15 +244,23 @@ function PostItem({
           <HStack justify="space-between" align="start">
             <Box flex={1}>
               <HStack align="center" gap={2}>
-                <Link href={`/user/${post.createdBy.id}`}>
-                  <Text
-                    fontWeight="bold"
-                    color="white"
-                    _hover={{ color: "blue.300", cursor: "pointer" }}
-                    transition="color 0.2s"
-                  >
-                    {post.createdBy.name ?? "Anonymous"}
-                  </Text>
+                <Text
+                  fontWeight="bold"
+                  color="white"
+                  _hover={{ color: "blue.300", cursor: "pointer" }}
+                  transition="color 0.2s"
+                  onClick={() => router.push(`/user/${post.createdBy.id}`)}
+                  cursor="pointer"
+                >
+                  {post.createdBy.name ?? "Anonymous"}
+                </Text>
+                {/* Hidden prefetch link for instant navigation */}
+                <Link
+                  href={`/user/${post.createdBy.id}`}
+                  prefetch={true}
+                  style={{ display: "none" }}
+                >
+                  <span></span>
                 </Link>
                 {currentUserId && post.createdBy.id !== currentUserId && (
                   <Button
