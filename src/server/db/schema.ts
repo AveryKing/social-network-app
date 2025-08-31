@@ -31,6 +31,29 @@ export const posts = createTable(
   ],
 );
 
+export const likes = createTable(
+  "like",
+  (d) => ({
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    postId: d
+      .integer()
+      .notNull()
+      .references(() => posts.id),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.userId, t.postId] }),
+    index("like_user_id_idx").on(t.userId),
+    index("like_post_id_idx").on(t.postId),
+  ],
+);
+
 export const users = createTable("user", (d) => ({
   id: d
     .varchar({ length: 255 })
@@ -51,16 +74,29 @@ export const users = createTable("user", (d) => ({
   bio: d.varchar({ length: 160 }),
 }));
 
-export const postsRelations = relations(posts, ({ one }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [posts.createdById],
     references: [users.id],
+  }),
+  likes: many(likes),
+}));
+
+export const likesRelations = relations(likes, ({ one }) => ({
+  user: one(users, {
+    fields: [likes.userId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [likes.postId],
+    references: [posts.id],
   }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   posts: many(posts),
+  likes: many(likes),
 }));
 
 export const accounts = createTable(

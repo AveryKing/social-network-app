@@ -24,6 +24,7 @@ import {
   FaCalendarAlt,
   FaArrowLeft,
   FaTrash,
+  FaHeart,
 } from "react-icons/fa";
 import { api } from "~/trpc/react";
 import Link from "next/link";
@@ -43,6 +44,8 @@ type Post = {
   id: number;
   name: string | null;
   createdAt: Date;
+  likeCount: number;
+  isLikedByUser: boolean;
   createdBy: {
     id: string;
     name: string | null;
@@ -72,12 +75,12 @@ function PostSkeleton() {
   );
 }
 
-function UserPost({ 
-  post, 
-  currentUserId, 
-  onPostUpdated 
-}: { 
-  post: Post; 
+function UserPost({
+  post,
+  currentUserId,
+  onPostUpdated,
+}: {
+  post: Post;
   currentUserId: string | null;
   onPostUpdated: () => void;
 }) {
@@ -93,6 +96,18 @@ function UserPost({
   });
 
   const deletePost = api.post.delete.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
+
+  const likePost = api.post.like.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
+
+  const unlikePost = api.post.unlike.useMutation({
     onSuccess: () => {
       onPostUpdated();
     },
@@ -124,6 +139,16 @@ function UserPost({
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditContent(post.name ?? "");
+  };
+
+  const handleLike = async () => {
+    if (!currentUserId) return;
+    
+    if (post.isLikedByUser) {
+      await unlikePost.mutateAsync({ postId: post.id });
+    } else {
+      await likePost.mutateAsync({ postId: post.id });
+    }
   };
 
   const isOwner = currentUserId === post.createdBy.id;
@@ -236,6 +261,29 @@ function UserPost({
               {post.name}
             </Text>
           )}
+
+          {/* Like button section */}
+          <HStack mt={4} justify="space-between" align="center">
+            <HStack gap={2}>
+              <IconButton
+                aria-label={post.isLikedByUser ? "Unlike post" : "Like post"}
+                size="sm"
+                variant="ghost"
+                color={post.isLikedByUser ? "red.400" : "whiteAlpha.600"}
+                _hover={{ 
+                  color: post.isLikedByUser ? "red.500" : "red.400", 
+                  bg: "whiteAlpha.200" 
+                }}
+                onClick={handleLike}
+                disabled={!currentUserId || likePost.isPending || unlikePost.isPending}
+              >
+                <FaHeart />
+              </IconButton>
+              <Text color="whiteAlpha.700" fontSize="sm">
+                {post.likeCount} {post.likeCount === 1 ? 'like' : 'likes'}
+              </Text>
+            </HStack>
+          </HStack>
         </Box>
       </HStack>
     </Box>
@@ -257,10 +305,13 @@ export default function Profile({ user }: { user: User }) {
     },
   });
 
-  const { data: userPosts, isLoading: postsLoading, refetch: refetchPosts } =
-    api.post.getUserPosts.useQuery({
-      userId: user.id,
-    });
+  const {
+    data: userPosts,
+    isLoading: postsLoading,
+    refetch: refetchPosts,
+  } = api.post.getUserPosts.useQuery({
+    userId: user.id,
+  });
 
   const handlePostUpdated = () => {
     void refetchPosts();
@@ -477,8 +528,8 @@ export default function Profile({ user }: { user: User }) {
                     />
                     <HStack justify="space-between" mt={2}>
                       <Text fontSize="xs" color="whiteAlpha.600">
-                        Share your interests, profession, or anything you&apos;d like
-                        others to know
+                        Share your interests, profession, or anything you&apos;d
+                        like others to know
                       </Text>
                       <Text
                         fontSize="xs"
@@ -615,9 +666,9 @@ export default function Profile({ user }: { user: User }) {
             </>
           ) : userPosts && userPosts.length > 0 ? (
             userPosts.map((post: Post) => (
-              <UserPost 
-                key={post.id} 
-                post={post} 
+              <UserPost
+                key={post.id}
+                post={post}
                 currentUserId={user.id}
                 onPostUpdated={handlePostUpdated}
               />

@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaHeart } from "react-icons/fa";
 import CreatePost from "./create-post";
 
 type User = {
@@ -31,6 +31,8 @@ type Post = {
   id: number;
   name: string | null;
   createdAt: Date;
+  likeCount: number;
+  isLikedByUser: boolean;
   createdBy: {
     id: string;
     name: string | null;
@@ -117,6 +119,18 @@ function PostItem({
     },
   });
 
+  const likePost = api.post.like.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
+
+  const unlikePost = api.post.unlike.useMutation({
+    onSuccess: () => {
+      onPostUpdated();
+    },
+  });
+
   useEffect(() => {
     setFormattedDate(new Date(post.createdAt).toLocaleDateString());
   }, [post.createdAt]);
@@ -143,6 +157,16 @@ function PostItem({
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditContent(post.name ?? "");
+  };
+
+  const handleLike = async () => {
+    if (!currentUserId) return;
+    
+    if (post.isLikedByUser) {
+      await unlikePost.mutateAsync({ postId: post.id });
+    } else {
+      await likePost.mutateAsync({ postId: post.id });
+    }
   };
 
   const isOwner = currentUserId === post.createdBy.id;
@@ -255,6 +279,29 @@ function PostItem({
               {post.name}
             </Text>
           )}
+          
+          {/* Like button section */}
+          <HStack mt={4} justify="space-between" align="center">
+            <HStack gap={2}>
+              <IconButton
+                aria-label={post.isLikedByUser ? "Unlike post" : "Like post"}
+                size="sm"
+                variant="ghost"
+                color={post.isLikedByUser ? "red.400" : "whiteAlpha.600"}
+                _hover={{ 
+                  color: post.isLikedByUser ? "red.500" : "red.400", 
+                  bg: "whiteAlpha.200" 
+                }}
+                onClick={handleLike}
+                disabled={!currentUserId || likePost.isPending || unlikePost.isPending}
+              >
+                <FaHeart />
+              </IconButton>
+              <Text color="whiteAlpha.700" fontSize="sm">
+                {post.likeCount} {post.likeCount === 1 ? 'like' : 'likes'}
+              </Text>
+            </HStack>
+          </HStack>
         </Box>
       </HStack>
     </Box>

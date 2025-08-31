@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { posts } from "~/server/db/schema";
+import { posts, likes } from "~/server/db/schema";
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -45,10 +45,26 @@ export const postRouter = createTRPCRouter({
             image: true,
           },
         },
+        likes: {
+          columns: {
+            userId: true,
+          },
+        },
       },
     });
 
-    return allPosts;
+    // Transform posts to include like counts and user's like status
+    const postsWithLikes = allPosts.map((post) => ({
+      ...post,
+      likeCount: post.likes.length,
+      isLikedByUser: 
+        ctx.session?.user?.id
+          ? post.likes.some((like) => like.userId === ctx.session!.user.id)
+          : false,
+      likes: undefined, // Remove the likes array from response
+    }));
+
+    return postsWithLikes;
   }),
 
   getUserPosts: publicProcedure
@@ -65,10 +81,26 @@ export const postRouter = createTRPCRouter({
               image: true,
             },
           },
+          likes: {
+            columns: {
+              userId: true,
+            },
+          },
         },
       });
 
-      return userPosts;
+      // Transform posts to include like counts and user's like status
+      const postsWithLikes = userPosts.map((post) => ({
+        ...post,
+        likeCount: post.likes.length,
+        isLikedByUser: 
+          ctx.session?.user?.id
+            ? post.likes.some((like) => like.userId === ctx.session!.user.id)
+            : false,
+        likes: undefined, // Remove the likes array from response
+      }));
+
+      return postsWithLikes;
     }),
 
   update: protectedProcedure
@@ -119,6 +151,52 @@ export const postRouter = createTRPCRouter({
       }
 
       await ctx.db.delete(posts).where(eq(posts.id, input.id));
+    }),
+
+  like: protectedProcedure
+    .input(z.object({ postId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if post exists
+      const post = await ctx.db.query.posts.findFirst({
+        where: (posts, { eq }) => eq(posts.id, input.postId),
+      });
+
+      if (!post) {
+        throw new Error("Post not found");
+      }
+
+      // Check if user already liked this post
+      const existingLike = await ctx.db.query.likes.findFirst({
+        where: (likes, { eq, and }) =>
+          and(
+            eq(likes.postId, input.postId),
+            eq(likes.userId, ctx.session.user.id),
+          ),
+      });
+
+      if (existingLike) {
+        throw new Error("You have already liked this post");
+      }
+
+      // Add the like
+      await ctx.db.insert(likes).values({
+        postId: input.postId,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  unlike: protectedProcedure
+    .input(z.object({ postId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Remove the like
+      await ctx.db
+        .delete(likes)
+        .where(
+          and(
+            eq(likes.postId, input.postId),
+            eq(likes.userId, ctx.session.user.id),
+          ),
+        );
     }),
 
   getSecretMessage: protectedProcedure.query(() => {
