@@ -54,7 +54,9 @@ export default function Header({ session }: { session: Session | null }) {
               <Portal>
                 <Menu.Positioner>
                   <Menu.Content>
-                    <Menu.Item value="account">Account</Menu.Item>
+                    <Link href="/profile">
+                      <Menu.Item value="profile">Profile</Menu.Item>
+                    </Link>
                     <Menu.Item value="settings">Settings</Menu.Item>
                     <Link href="/api/auth/signout">
                       <Menu.Item value="logout">Logout</Menu.Item>{" "}

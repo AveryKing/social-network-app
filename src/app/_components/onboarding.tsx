@@ -44,7 +44,7 @@ interface GoogleMaps {
   places: {
     Autocomplete: new (
       input: HTMLInputElement,
-      options?: { types: string[] }
+      options?: { types: string[] },
     ) => GoogleAutocomplete;
   };
 }
