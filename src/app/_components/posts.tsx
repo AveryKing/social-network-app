@@ -18,7 +18,6 @@ import { api } from "~/trpc/react";
 import { FaEdit, FaTrash, FaHeart } from "react-icons/fa";
 import CreatePost from "./create-post";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 type User = {
   name: string | null;
@@ -108,7 +107,9 @@ function PostItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.name ?? "");
   const [isFollowing, setIsFollowing] = useState(false);
-  const router = useRouter();
+  
+  // Get tRPC utils for prefetching
+  const utils = api.useUtils();
 
   const updatePost = api.post.update.useMutation({
     onSuccess: () => {
@@ -147,30 +148,20 @@ function PostItem({
     },
   });
 
+  // Prefetch user data for instant navigation
+  useEffect(() => {
+    // Prefetch user profile data
+    void utils.user.getById.prefetch({ id: post.createdBy.id });
+    // Prefetch user's posts
+    void utils.post.getUserPosts.prefetch({ userId: post.createdBy.id });
+  }, [post.createdBy.id, utils]);
+
   // Check if user is following this post author
   const { data: userData } = api.user.getById.useQuery(
     { id: post.createdBy.id },
     {
       enabled: !!currentUserId && post.createdBy.id !== currentUserId,
       refetchOnWindowFocus: false,
-    },
-  );
-
-  // Prefetch user data for instant navigation
-  api.user.getById.useQuery(
-    { id: post.createdBy.id },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  );
-
-  // Prefetch user posts for instant profile loading
-  api.post.getUserPosts.useQuery(
-    { userId: post.createdBy.id },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: 2 * 60 * 1000, // 2 minutes
     },
   );
 
@@ -244,23 +235,20 @@ function PostItem({
           <HStack justify="space-between" align="start">
             <Box flex={1}>
               <HStack align="center" gap={2}>
-                <Text
-                  fontWeight="bold"
-                  color="white"
-                  _hover={{ color: "blue.300", cursor: "pointer" }}
-                  transition="color 0.2s"
-                  onClick={() => router.push(`/user/${post.createdBy.id}`)}
-                  cursor="pointer"
-                >
-                  {post.createdBy.name ?? "Anonymous"}
-                </Text>
-                {/* Hidden prefetch link for instant navigation */}
                 <Link
                   href={`/user/${post.createdBy.id}`}
                   prefetch={true}
-                  style={{ display: "none" }}
+                  style={{ textDecoration: "none" }}
                 >
-                  <span></span>
+                  <Text
+                    fontWeight="bold"
+                    color="white"
+                    _hover={{ color: "blue.300", cursor: "pointer" }}
+                    transition="color 0.2s"
+                    cursor="pointer"
+                  >
+                    {post.createdBy.name ?? "Anonymous"}
+                  </Text>
                 </Link>
                 {currentUserId && post.createdBy.id !== currentUserId && (
                   <Button
@@ -404,6 +392,10 @@ function PostItem({
 export default function Posts({ user }: { user: User | null }) {
   const [isClient, setIsClient] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  
+  // Get tRPC utils for aggressive prefetching
+  const utils = api.useUtils();
+  
   const {
     data: posts,
     refetch,
@@ -414,6 +406,21 @@ export default function Posts({ user }: { user: User | null }) {
     refetchInterval: 30000,
     staleTime: 0,
   });
+
+  // Aggressively prefetch all user profiles when posts load
+  useEffect(() => {
+    if (posts && posts.length > 0) {
+      // Create a small delay to not block the main thread
+      setTimeout(() => {
+        posts.forEach((post) => {
+          // Prefetch user profile data
+          void utils.user.getById.prefetch({ id: post.createdBy.id });
+          // Prefetch user's posts
+          void utils.post.getUserPosts.prefetch({ userId: post.createdBy.id });
+        });
+      }, 100);
+    }
+  }, [posts, utils]);
 
   // Prevent hydration issues by only running client-side code after mount
   useEffect(() => {
