@@ -348,6 +348,36 @@ export default function Profile({
   currentUserId?: string;
 }) {
   const isOwnProfile = currentUserId === user.id;
+  const router = useRouter();
+  
+  // Get tRPC utils for prefetching
+  const utils = api.useUtils();
+
+  // Aggressively prefetch home page data when profile loads
+  useEffect(() => {
+    // Prefetch all posts for home page
+    void utils.post.getAll.prefetch();
+    
+    // If user exists, prefetch user data
+    if (currentUserId) {
+      void utils.user.getUser.prefetch();
+    }
+    
+    // Prefetch popular user profiles (for posts on home page)
+    setTimeout(() => {
+      // This will prefetch data that might be on the home page
+      void utils.post.getAll.fetch().then((posts) => {
+        if (posts) {
+          posts.forEach((post) => {
+            void utils.user.getById.prefetch({ id: post.createdBy.id });
+          });
+        }
+      }).catch(() => {
+        // Silently handle errors in prefetching
+      });
+    }, 500);
+  }, [utils, currentUserId]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: user.name ?? "",
@@ -401,6 +431,12 @@ export default function Profile({
     });
   };
 
+  // Instant navigation to home
+  const handleBackToHome = () => {
+    // Use router.push for instant navigation since data is prefetched
+    router.push('/');
+  };
+
   // Setup Google Places Autocomplete
   useEffect(() => {
     if (window.google && locationInputRef.current && isEditing) {
@@ -434,22 +470,27 @@ export default function Profile({
         strategy="afterInteractive"
       />
 
+      {/* Hidden prefetch link for home page */}
+      <Link href="/" prefetch={true} style={{ display: "none" }}>
+        <span></span>
+      </Link>
+
       <Box minH="100vh" bg="rgb(61, 60, 60)" position="relative">
         {/* Profile Header Section */}
         <Container maxW="3xl" py={8} position="relative">
           <VStack align="stretch" gap={6}>
-            {/* Back Button */}
-            <Link href="/">
-              <Button
-                variant="ghost"
-                size="sm"
-                color="whiteAlpha.700"
-                _hover={{ color: "white", bg: "whiteAlpha.200" }}
-              >
-                <FaArrowLeft />
-                <Box ml={2}>Back to Home</Box>
-              </Button>
-            </Link>
+            {/* Back Button with instant navigation */}
+            <Button
+              variant="ghost"
+              size="sm"
+              color="whiteAlpha.700"
+              _hover={{ color: "white", bg: "whiteAlpha.200" }}
+              onClick={handleBackToHome}
+              w="fit-content"
+            >
+              <FaArrowLeft />
+              <Box ml={2}>Back to Home</Box>
+            </Button>
 
             {/* Profile Header Card */}
             <Box

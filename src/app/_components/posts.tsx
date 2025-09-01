@@ -107,7 +107,7 @@ function PostItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.name ?? "");
   const [isFollowing, setIsFollowing] = useState(false);
-  
+
   // Get tRPC utils for prefetching
   const utils = api.useUtils();
 
@@ -392,10 +392,10 @@ function PostItem({
 export default function Posts({ user }: { user: User | null }) {
   const [isClient, setIsClient] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  
+
   // Get tRPC utils for aggressive prefetching
   const utils = api.useUtils();
-  
+
   const {
     data: posts,
     refetch,

@@ -11,15 +11,37 @@ import {
   Menu,
   Portal,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Session } from "next-auth";
 import Link from "next/link";
 import { BsBell, BsSearch } from "react-icons/bs";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 export default function Header({ session }: { session: Session | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const toggleMenu = () => setIsOpen(!isOpen);
+  const router = useRouter();
+  
+  // Get tRPC utils for prefetching
+  const utils = api.useUtils();
+
+  // Prefetch profile data when header loads (if user is signed in)
+  useEffect(() => {
+    if (session?.user?.id) {
+      // Prefetch current user data for profile page
+      void utils.user.getUser.prefetch();
+      void utils.user.getById.prefetch({ id: session.user.id });
+      // Prefetch user's posts for profile page
+      void utils.post.getUserPosts.prefetch({ userId: session.user.id });
+    }
+  }, [session?.user?.id, utils]);
+
+  // Instant navigation to profile
+  const handleProfileClick = () => {
+    router.push('/profile');
+  };
 
   return (
     <Box
@@ -229,16 +251,21 @@ export default function Header({ session }: { session: Session | null }) {
                     borderRadius="lg"
                     minW="200px"
                   >
-                    <Link href="/profile">
-                      <Menu.Item
-                        value="profile"
-                        color="white"
-                        _hover={{ bg: "whiteAlpha.200" }}
-                        fontWeight="medium"
-                      >
-                        Profile
-                      </Menu.Item>
+                    {/* Hidden prefetch link for profile page */}
+                    <Link href="/profile" prefetch={true} style={{ display: "none" }}>
+                      <span></span>
                     </Link>
+                    
+                    <Menu.Item
+                      value="profile"
+                      color="white"
+                      _hover={{ bg: "whiteAlpha.200" }}
+                      fontWeight="medium"
+                      onClick={handleProfileClick}
+                      cursor="pointer"
+                    >
+                      Profile
+                    </Menu.Item>
                     <Menu.Item
                       value="settings"
                       color="white"
