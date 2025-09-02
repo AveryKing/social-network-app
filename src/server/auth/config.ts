@@ -63,4 +63,5 @@ export const authConfig = {
       },
     }),
   },
+  trustHost: true, // Added to fix UntrustedHost error for localhost
 } satisfies NextAuthConfig;

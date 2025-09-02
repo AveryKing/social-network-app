@@ -24,18 +24,24 @@ type User = {
 export default function CreatePost({
   user,
   onPostCreated,
+  onPostSuccess,
 }: {
   user: User;
-  onPostCreated: () => void;
+  onPostCreated: (content?: string) => void;
+  onPostSuccess?: () => void;
 }) {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
   const createPost = api.post.create.useMutation({
+    onMutate: async (newPost) => {
+      onPostCreated(newPost.name);
+    },
+
     onSuccess: () => {
       setContent("");
       setIsFocused(false);
-      onPostCreated();
+      onPostSuccess?.();
     },
   });
 

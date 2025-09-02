@@ -349,7 +349,7 @@ export default function Profile({
 }) {
   const isOwnProfile = currentUserId === user.id;
   const router = useRouter();
-  
+
   // Get tRPC utils for prefetching
   const utils = api.useUtils();
 
@@ -357,24 +357,27 @@ export default function Profile({
   useEffect(() => {
     // Prefetch all posts for home page
     void utils.post.getAll.prefetch();
-    
+
     // If user exists, prefetch user data
     if (currentUserId) {
       void utils.user.getUser.prefetch();
     }
-    
+
     // Prefetch popular user profiles (for posts on home page)
     setTimeout(() => {
       // This will prefetch data that might be on the home page
-      void utils.post.getAll.fetch().then((posts) => {
-        if (posts) {
-          posts.forEach((post) => {
-            void utils.user.getById.prefetch({ id: post.createdBy.id });
-          });
-        }
-      }).catch(() => {
-        // Silently handle errors in prefetching
-      });
+      void utils.post.getAll
+        .fetch()
+        .then((posts) => {
+          if (posts) {
+            posts.forEach((post) => {
+              void utils.user.getById.prefetch({ id: post.createdBy.id });
+            });
+          }
+        })
+        .catch(() => {
+          // Silently handle errors in prefetching
+        });
     }, 500);
   }, [utils, currentUserId]);
 
@@ -434,7 +437,7 @@ export default function Profile({
   // Instant navigation to home
   const handleBackToHome = () => {
     // Use router.push for instant navigation since data is prefetched
-    router.push('/');
+    router.push("/");
   };
 
   // Setup Google Places Autocomplete
@@ -480,18 +483,18 @@ export default function Profile({
         <Container maxW="3xl" py={8} position="relative">
           <VStack align="stretch" gap={6}>
             {/* Back Button with instant navigation */}
-            <Button
-              variant="ghost"
-              size="sm"
-              color="whiteAlpha.700"
-              _hover={{ color: "white", bg: "whiteAlpha.200" }}
-              onClick={handleBackToHome}
-              w="fit-content"
-            >
-              <FaArrowLeft />
-              <Box ml={2}>Back to Home</Box>
-            </Button>
-
+            <Link href="/" prefetch={true}>
+              <Button
+                variant="ghost"
+                size="sm"
+                color="whiteAlpha.700"
+                _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                w="fit-content"
+              >
+                <FaArrowLeft />
+                <Box ml={2}>Back to Home</Box>
+              </Button>
+            </Link>
             {/* Profile Header Card */}
             <Box
               bg="whiteAlpha.50"

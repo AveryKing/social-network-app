@@ -1,16 +1,3 @@
-import Link from "next/link";
-import {
-  Box,
-  VStack,
-  Container,
-  Text,
-  Avatar,
-  Flex,
-  IconButton,
-} from "@chakra-ui/react";
-import { FaHeart, FaComment, FaShare } from "react-icons/fa";
-
-import { LatestPost } from "~/app/_components/post";
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import styles from "./index.module.css";

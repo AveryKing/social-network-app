@@ -392,6 +392,7 @@ function PostItem({
 export default function Posts({ user }: { user: User | null }) {
   const [isClient, setIsClient] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [optimisticPosts, setOptimisticPosts] = useState<Post[]>([]);
 
   // Get tRPC utils for aggressive prefetching
   const utils = api.useUtils();
@@ -410,24 +411,19 @@ export default function Posts({ user }: { user: User | null }) {
   // Aggressively prefetch all user profiles when posts load
   useEffect(() => {
     if (posts && posts.length > 0) {
-      // Create a small delay to not block the main thread
       setTimeout(() => {
         posts.forEach((post) => {
-          // Prefetch user profile data
           void utils.user.getById.prefetch({ id: post.createdBy.id });
-          // Prefetch user's posts
           void utils.post.getUserPosts.prefetch({ userId: post.createdBy.id });
         });
       }, 100);
     }
   }, [posts, utils]);
 
-  // Prevent hydration issues by only running client-side code after mount
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Show content with a slight delay to ensure smooth transition
   useEffect(() => {
     if (isSuccess && posts !== undefined) {
       const timer = setTimeout(() => setShowContent(true), 100);
@@ -435,28 +431,67 @@ export default function Posts({ user }: { user: User | null }) {
     }
   }, [isSuccess, posts]);
 
-  // Listen for cross-tab post updates only on client
   useEffect(() => {
     if (!isClient) return;
-
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "new-post-created") {
         void refetch();
         localStorage.removeItem("new-post-created");
       }
     };
-
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [refetch, isClient]);
 
-  const handlePostCreated = () => {
+  // Optimistic update handler
+  const handlePostCreated = (content?: string) => {
+    if (content && user) {
+      setOptimisticPosts((prev) => [
+        {
+          id: -Date.now(),
+          name: content,
+          createdAt: new Date(),
+          likeCount: 0,
+          isLikedByUser: false,
+          createdBy: {
+            id: user.id,
+            name: user.name,
+            image: user.image,
+          },
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  // Handler for when mutation succeeds and we need to refetch
+  const handlePostSuccess = () => {
     void refetch();
-    // Only use localStorage on client
     if (isClient && typeof window !== "undefined") {
       localStorage.setItem("new-post-created", Date.now().toString());
     }
   };
+
+  // Remove optimistic posts only when the server returns the new post
+  useEffect(() => {
+    if (optimisticPosts.length > 0 && posts && posts.length > 0) {
+      // Check if any optimistic post matches a real post
+      const remainingOptimistic = optimisticPosts.filter((optimistic) => {
+        return !posts.some(
+          (real) =>
+            real.name === optimistic.name &&
+            real.createdBy.id === optimistic.createdBy.id &&
+            Math.abs(
+              new Date(real.createdAt).getTime() -
+                optimistic.createdAt.getTime(),
+            ) < 10000, // within 10s
+        );
+      });
+      if (remainingOptimistic.length !== optimisticPosts.length) {
+        setOptimisticPosts(remainingOptimistic);
+      }
+    }
+  }, [posts, optimisticPosts]);
 
   if (!user) {
     return null;
@@ -465,35 +500,54 @@ export default function Posts({ user }: { user: User | null }) {
   return (
     <Container maxW="3xl" py={8}>
       <VStack align="stretch" gap={4}>
-        {/* Show CreatePost skeleton during initial load, then real component */}
         {!showContent ? (
           <CreatePostSkeleton />
         ) : (
-          <CreatePost user={user} onPostCreated={handlePostCreated} />
+          <CreatePost
+            user={user}
+            onPostCreated={handlePostCreated}
+            onPostSuccess={handlePostSuccess}
+          />
         )}
 
-        {/* Show skeleton while loading, then posts or empty state */}
         {!showContent || isLoading ? (
           <>
             <PostSkeleton />
             <PostSkeleton />
             <PostSkeleton />
           </>
-        ) : posts?.length ? (
-          posts.map((post) => (
-            <PostItem
-              key={post.id}
-              post={post}
-              currentUserId={user?.id ?? null}
-              onPostUpdated={handlePostCreated}
-            />
-          ))
         ) : (
-          <Box bg="whiteAlpha.50" borderRadius="xl" p={6} textAlign="center">
-            <Text color="whiteAlpha.600">
-              No posts yet. Be the first to share something!
-            </Text>
-          </Box>
+          <>
+            {optimisticPosts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                currentUserId={user?.id ?? null}
+                onPostUpdated={handlePostCreated}
+              />
+            ))}
+            {posts?.length ? (
+              posts.map((post) => (
+                <PostItem
+                  key={post.id}
+                  post={post}
+                  currentUserId={user?.id ?? null}
+                  onPostUpdated={handlePostCreated}
+                />
+              ))
+            ) : (
+              <Box
+                bg="whiteAlpha.50"
+                borderRadius="xl"
+                p={6}
+                textAlign="center"
+              >
+                <Text color="whiteAlpha.600">
+                  No posts yet. Be the first to share something!
+                </Text>
+              </Box>
+            )}
+          </>
         )}
       </VStack>
     </Container>

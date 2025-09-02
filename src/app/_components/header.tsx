@@ -23,7 +23,7 @@ export default function Header({ session }: { session: Session | null }) {
   const [searchQuery, setSearchQuery] = useState("");
   const toggleMenu = () => setIsOpen(!isOpen);
   const router = useRouter();
-  
+
   // Get tRPC utils for prefetching
   const utils = api.useUtils();
 
@@ -37,11 +37,6 @@ export default function Header({ session }: { session: Session | null }) {
       void utils.post.getUserPosts.prefetch({ userId: session.user.id });
     }
   }, [session?.user?.id, utils]);
-
-  // Instant navigation to profile
-  const handleProfileClick = () => {
-    router.push('/profile');
-  };
 
   return (
     <Box
@@ -252,20 +247,17 @@ export default function Header({ session }: { session: Session | null }) {
                     minW="200px"
                   >
                     {/* Hidden prefetch link for profile page */}
-                    <Link href="/profile" prefetch={true} style={{ display: "none" }}>
-                      <span></span>
+                    <Link href="/profile" prefetch={true}>
+                      <Menu.Item
+                        value="profile"
+                        color="white"
+                        _hover={{ bg: "whiteAlpha.200" }}
+                        fontWeight="medium"
+                        cursor="pointer"
+                      >
+                        Profile
+                      </Menu.Item>
                     </Link>
-                    
-                    <Menu.Item
-                      value="profile"
-                      color="white"
-                      _hover={{ bg: "whiteAlpha.200" }}
-                      fontWeight="medium"
-                      onClick={handleProfileClick}
-                      cursor="pointer"
-                    >
-                      Profile
-                    </Menu.Item>
                     <Menu.Item
                       value="settings"
                       color="white"
