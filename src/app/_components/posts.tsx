@@ -98,10 +98,12 @@ function PostItem({
   post,
   currentUserId,
   onPostUpdated,
+  onPostDeleted,
 }: {
   post: Post;
   currentUserId: string | null;
   onPostUpdated: () => void;
+  onPostDeleted?: (postId: number) => void;
 }) {
   const [formattedDate, setFormattedDate] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
@@ -119,6 +121,10 @@ function PostItem({
   });
 
   const deletePost = api.post.delete.useMutation({
+    onMutate: async (variables) => {
+      // Optimistically remove the post
+      onPostDeleted?.(variables.id);
+    },
     onSuccess: () => {
       onPostUpdated();
     },
@@ -392,7 +398,7 @@ function PostItem({
 export default function Posts({ user }: { user: User | null }) {
   const [isClient, setIsClient] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const [optimisticPosts, setOptimisticPosts] = useState<Post[]>([]);
+  const [deletedPostIds, setDeletedPostIds] = useState<number[]>([]);
 
   // Get tRPC utils for aggressive prefetching
   const utils = api.useUtils();
@@ -443,27 +449,6 @@ export default function Posts({ user }: { user: User | null }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [refetch, isClient]);
 
-  // Optimistic update handler
-  const handlePostCreated = (content?: string) => {
-    if (content && user) {
-      setOptimisticPosts((prev) => [
-        {
-          id: -Date.now(),
-          name: content,
-          createdAt: new Date(),
-          likeCount: 0,
-          isLikedByUser: false,
-          createdBy: {
-            id: user.id,
-            name: user.name,
-            image: user.image,
-          },
-        },
-        ...prev,
-      ]);
-    }
-  };
-
   // Handler for when mutation succeeds and we need to refetch
   const handlePostSuccess = () => {
     void refetch();
@@ -472,26 +457,15 @@ export default function Posts({ user }: { user: User | null }) {
     }
   };
 
-  // Remove optimistic posts only when the server returns the new post
-  useEffect(() => {
-    if (optimisticPosts.length > 0 && posts && posts.length > 0) {
-      // Check if any optimistic post matches a real post
-      const remainingOptimistic = optimisticPosts.filter((optimistic) => {
-        return !posts.some(
-          (real) =>
-            real.name === optimistic.name &&
-            real.createdBy.id === optimistic.createdBy.id &&
-            Math.abs(
-              new Date(real.createdAt).getTime() -
-                optimistic.createdAt.getTime(),
-            ) < 10000, // within 10s
-        );
-      });
-      if (remainingOptimistic.length !== optimisticPosts.length) {
-        setOptimisticPosts(remainingOptimistic);
-      }
-    }
-  }, [posts, optimisticPosts]);
+  // Optimistic delete handler
+  const handlePostDeleted = (postId: number) => {
+    setDeletedPostIds((prev) => [...prev, postId]);
+  };
+
+  // Optimistic update handler - now called after mutation success
+  const handlePostCreated = (content?: string) => {
+    // This is now unused since we removed onMutate
+  };
 
   if (!user) {
     return null;
@@ -518,23 +492,18 @@ export default function Posts({ user }: { user: User | null }) {
           </>
         ) : (
           <>
-            {optimisticPosts.map((post) => (
-              <PostItem
-                key={post.id}
-                post={post}
-                currentUserId={user?.id ?? null}
-                onPostUpdated={handlePostCreated}
-              />
-            ))}
             {posts?.length ? (
-              posts.map((post) => (
-                <PostItem
-                  key={post.id}
-                  post={post}
-                  currentUserId={user?.id ?? null}
-                  onPostUpdated={handlePostCreated}
-                />
-              ))
+              posts
+                .filter((post) => !deletedPostIds.includes(post.id))
+                .map((post) => (
+                  <PostItem
+                    key={post.id}
+                    post={post}
+                    currentUserId={user?.id ?? null}
+                    onPostUpdated={handlePostCreated}
+                    onPostDeleted={handlePostDeleted}
+                  />
+                ))
             ) : (
               <Box
                 bg="whiteAlpha.50"

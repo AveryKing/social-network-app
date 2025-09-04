@@ -34,10 +34,6 @@ export default function CreatePost({
   const [isFocused, setIsFocused] = useState(false);
 
   const createPost = api.post.create.useMutation({
-    onMutate: async (newPost) => {
-      onPostCreated(newPost.name);
-    },
-
     onSuccess: () => {
       setContent("");
       setIsFocused(false);
